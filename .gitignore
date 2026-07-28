@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local/generated
+.DS_Store
+Thumbs.db
+analysis_outputs/tmp/
+
+# Do not accidentally add full experiment artifacts
+*.pt
+*.pth
+*.ckpt
+*.tar.gz
+full_test_results/
+raw_data/
+logs/

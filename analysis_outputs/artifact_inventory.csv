@@ -1,0 +1,7 @@
+folder,has_metrics,has_selected_results_npz,array_shape,finite_prediction_target
+01_baseline,True,True,"prediction=(5023, 6, 39, 1); target=(5023, 6, 39, 1)",True
+02_baseline_removal,True,True,"prediction=(5023, 6, 39, 1); target=(5023, 6, 39, 1)",True
+03_baseline_jump,True,True,"prediction=(5023, 6, 39, 1); target=(5023, 6, 39, 1)",True
+04_baseline_removal_jump,True,True,"prediction=(5023, 6, 39, 1); target=(5023, 6, 39, 1)",True
+05_baseline_removal_jump_kd,True,True,"prediction=(5023, 6, 39, 1); target=(5023, 6, 39, 1)",True
+teacher,True,True,"prediction=(17821, 6, 39, 1); target=(17821, 6, 39, 1)",True
