@@ -1,0 +1,43 @@
+{
+    "name": "PM25",
+    "domain": "air pollution",
+    "shape": [
+        25593,
+        39,
+        15
+    ],
+    "num_time_steps": 25593,
+    "num_nodes": 39,
+    "num_features": 15,
+    "feature_description": [
+        "AQI",
+        "CO",
+        "NO2",
+        "O3",
+        "PM10",
+        "SO2",
+        "Dew_point_temperature",
+        "Ground_pressure",
+        "temperature",
+        "wind_direction",
+        "wind_speed",
+        "PM2_5",
+        "hour",
+        "day_of_week",
+        "month"
+    ],
+    "has_graph": true,
+    "frequency (minutes)": 60,
+    "regular_settings": {
+        "INPUT_LEN": 48,
+        "OUTPUT_LEN": 48,
+        "NORM_EACH_CHANNEL": true,
+        "RESCALE": true,
+        "METRICS": [
+            "MAE",
+            "RMSE",
+            "MAPE"
+        ],
+        "NULL_VAL": 0.0
+    }
+}

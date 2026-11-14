@@ -17,11 +17,11 @@ import numpy as np
 
 HORIZONS = [1, 3, 6, 12, 24, 48]
 ROW_ORDER = [
-    ("01_baseline", "Geo-Wind + KAN baseline"),
-    ("02_baseline_removal", "Geo-Wind + KAN + Removal"),
-    ("03_baseline_jump", "Geo-Wind + KAN + Jump"),
-    ("04_baseline_removal_jump", "Geo-Wind + KAN + Removal + Jump"),
-    ("05_baseline_removal_jump_kd", "Geo-Wind + KAN + Removal + Jump + KD"),
+    ("01_baseline", "MVG-KAN"),
+    ("02_baseline_removal", "MVG-KAN + APREM"),
+    ("03_baseline_jump", "MVG-KAN + EJRL"),
+    ("04_baseline_removal_jump", "MVG-KAN + APREM + EJRL"),
+    ("05_baseline_removal_jump_kd", "MDR-PM"),
 ]
 FEATURE_FLAGS = {
     "01_baseline": ("no", "no", "no"),
@@ -132,8 +132,6 @@ def metric_rows(root: Path) -> tuple[list[dict], list[dict], list[dict], list[di
 def inventory_rows(root: Path) -> list[dict]:
     rows = []
     folders = [folder for folder, _ in ROW_ORDER]
-    if (root / "teacher").exists():
-        folders.append("teacher")
     for folder in folders:
         d = root / folder
         npz_path = d / "selected_test_results.npz"
@@ -212,7 +210,7 @@ def plot_horizon_metric(out_dir: Path, horizon_rows: list[dict], metric: str) ->
     for folder, model_name in ROW_ORDER:
         rows = [row for row in horizon_rows if row["folder"] == folder]
         ax.plot([row["horizon"] for row in rows], [row[metric] for row in rows], marker="o", label=model_name)
-    ax.set_xlabel("Forecast horizon")
+    ax.set_xlabel("Forecast horizon (hours)")
     ax.set_ylabel(metric)
     ax.set_title(f"{metric} by Horizon")
     ax.grid(alpha=0.25)
@@ -227,8 +225,8 @@ def plot_improvement(out_dir: Path, improvement_rows: list[dict]) -> None:
     fig, ax = plt.subplots(figsize=(9, 4.5))
     bars = ax.bar([row["ID"] for row in rows], [row["MAE_improvement_pct"] for row in rows])
     ax.set_xlabel("Ablation ID")
-    ax.set_ylabel("MAE improvement vs baseline (%)")
-    ax.set_title("MAE Improvement over Baseline")
+    ax.set_ylabel("MAE reduction vs MVG-KAN (%)")
+    ax.set_title("Archived MAE Relative to MVG-KAN")
     ax.grid(axis="y", alpha=0.25)
     for bar, row in zip(bars, rows):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), f"{row['MAE_improvement_pct']:.2f}%", ha="center", va="bottom", fontsize=8)
@@ -247,11 +245,11 @@ def plot_distributions(root: Path, out_dir: Path) -> None:
 
     fig, ax = plt.subplots(figsize=(9, 5))
     bins = np.linspace(0, np.percentile(target, 99.5), 60)
-    ax.hist(target, bins=bins, density=True, alpha=0.55, label="Ground truth")
-    ax.hist(best_pred, bins=bins, density=True, alpha=0.55, label="Best prediction")
+    ax.hist(target, bins=bins, density=True, alpha=0.55, label="Repaired test targets")
+    ax.hist(best_pred, bins=bins, density=True, alpha=0.55, label="MDR-PM prediction")
     ax.set_xlabel("PM2.5")
     ax.set_ylabel("Density")
-    ax.set_title("Best Model Prediction vs Ground Truth Distribution")
+    ax.set_title("MDR-PM Prediction and Target Distributions")
     ax.legend()
     fig.tight_layout()
     fig.savefig(out_dir / "figures" / "best_prediction_vs_truth_distribution.png", dpi=180)
@@ -260,12 +258,12 @@ def plot_distributions(root: Path, out_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(9, 5))
     lo, hi = np.percentile(np.concatenate([base_err, best_err]), [0.5, 99.5])
     bins = np.linspace(lo, hi, 80)
-    ax.hist(base_err, bins=bins, density=True, alpha=0.55, label="Baseline error")
-    ax.hist(best_err, bins=bins, density=True, alpha=0.55, label="Best error")
+    ax.hist(base_err, bins=bins, density=True, alpha=0.55, label="MVG-KAN error")
+    ax.hist(best_err, bins=bins, density=True, alpha=0.55, label="MDR-PM error")
     ax.axvline(0, color="black", linewidth=1)
     ax.set_xlabel("Prediction error")
     ax.set_ylabel("Density")
-    ax.set_title("Error Distribution: Baseline vs Best")
+    ax.set_title("Archived Prediction Error Distributions")
     ax.legend()
     fig.tight_layout()
     fig.savefig(out_dir / "figures" / "baseline_vs_best_error_hist.png", dpi=180)
@@ -274,13 +272,18 @@ def plot_distributions(root: Path, out_dir: Path) -> None:
 
 def write_markdown(out_dir: Path, overall_rows: list[dict], improvement_rows: list[dict]) -> None:
     lines = [
-        "# Offline PM2.5 Ablation Analysis",
+        "# MDR-PM Archived Ablation Analysis",
         "",
-        "Generated from released selected-horizon prediction and target arrays.",
+        "The metrics below come from the archived single runs at 1, 3, 6, 12, 24, and 48 hours.",
+        "The runs used different settings. MVG-KAN used pre-repair test targets, and the four variants used repaired targets.",
+        "See [the test data documentation](../test_data/README.md) for the test target versions.",
         "",
-        "## Main Ablation Table",
+        "MAE and RMSE are in micrograms per cubic meter. MAPE is shown as a ratio.",
+        "`jump_subset_metrics.csv` contains the saved historical subset metrics for two variants.",
         "",
-        "| ID | Model | Removal | Jump | KD | MAE | RMSE | MAPE |",
+        "## Archived single-run results",
+        "",
+        "| ID | Model | APREM | EJRL | SJ-RCD | MAE | RMSE | MAPE |",
         "|---:|---|---|---|---|---:|---:|---:|",
     ]
     for row in overall_rows:
@@ -291,9 +294,9 @@ def write_markdown(out_dir: Path, overall_rows: list[dict], improvement_rows: li
     lines.extend(
         [
             "",
-            "## Improvement vs Baseline",
+            "## Differences from the archived MVG-KAN run",
             "",
-            "| ID | Model | MAE delta | MAE improvement | RMSE delta | MAPE delta |",
+            "| ID | Model | MAE delta | MAE reduction | RMSE delta | MAPE delta |",
             "|---:|---|---:|---:|---:|---:|",
         ]
     )

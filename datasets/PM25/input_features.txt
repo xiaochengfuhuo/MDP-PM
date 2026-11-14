@@ -1,0 +1,13 @@
+# Historical input features used by baselines/HyperD/PM25.py.
+AQI
+CO
+NO2
+O3
+PM10
+SO2
+Dew_point_temperature
+Ground_pressure
+temperature
+wind_direction
+wind_speed
+PM2_5
